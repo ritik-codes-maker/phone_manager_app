@@ -22,6 +22,7 @@ export default function UploadForm() {
     const file = e.target.files[0];
     if (file) {
       setImage(URL.createObjectURL(file));
+      setFile(file);
     }
   };
 
@@ -30,13 +31,8 @@ export default function UploadForm() {
 
     if (!file) {
       toast.error("Please choose a file.");
-      console.warn("No file selected!");
       return;
     }
-
-    console.log("File selected:", file);
-    console.log("Cloudinary Upload URL:", CLOUDINARY_UPLOAD_URL);
-    console.log("Cloudinary Upload Preset:", CLOUDINARY_UPLOAD_PRESET);
 
     setLoading(true);
 
@@ -44,18 +40,9 @@ export default function UploadForm() {
       const form = new FormData();
       form.append("file", file);
       form.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+
       const res = await axios.post(CLOUDINARY_UPLOAD_URL, form);
-      console.log("Cloudinary Response:", res.data);
       const imageUrl = res.data.secure_url;
-
-      if (!imageUrl) {
-        console.error("secure_url NOT FOUND in Cloudinary response");
-        alert("Upload failed: Cloudinary did not return image URL");
-        return;
-      }
-
-      console.log(" Cloudinary Image URL:", imageUrl);
-      console.log("Saving data to Firestore...");
 
       await addPhoto({
         title,
@@ -64,20 +51,14 @@ export default function UploadForm() {
         createdAt: Date.now(),
       });
 
-      console.log("Firestore: Photo saved successfully!");
       setTitle("");
       setDesc("");
       setFile(null);
+      setImage(null);
 
       toast.success("Uploaded successfully!");
       navigate("/");
     } catch (err) {
-      console.error("Upload failed:", err);
-
-      if (err.response) {
-        console.error("Cloudinary Error Response:", err.response.data);
-      }
-
       toast.error("Upload failed. Check console for details.");
     } finally {
       setLoading(false);
@@ -94,15 +75,10 @@ export default function UploadForm() {
       <div className="flex items-center justify-center mt-5">
         <label
           htmlFor="fileInput"
-          className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-400"
+          className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-300 hover:scale-105 transition-transform"
         >
-          {/* Show preview if image selected */}
           {image ? (
-            <img
-              src={image}
-              alt="preview"
-              className="w-full h-full object-cover"
-            />
+            <img src={image} alt="preview" className="w-full h-full object-cover" />
           ) : (
             <span className="text-gray-600 text-5xl font-extrabold mb-2">+</span>
           )}
@@ -122,7 +98,7 @@ export default function UploadForm() {
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Title"
         className="border-gray-500 w-full mt-6 p-2 rounded"
-        mixLength={10}
+        maxLength={50}
       />
 
       <textarea
