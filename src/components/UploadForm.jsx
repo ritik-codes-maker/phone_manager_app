@@ -1,7 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 import { usePhotos } from "../context/PhotoContext";
-import { CLOUDINARY_UPLOAD_URL, CLOUDINARY_UPLOAD_PRESET } from "../cloudinary.js";
+import {
+  CLOUDINARY_UPLOAD_URL,
+  CLOUDINARY_UPLOAD_PRESET,
+} from "../cloudinary.js";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +14,16 @@ export default function UploadForm() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+
   const navigate = useNavigate();
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +45,7 @@ export default function UploadForm() {
       form.append("file", file);
       form.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
       const res = await axios.post(CLOUDINARY_UPLOAD_URL, form);
-     console.log("Cloudinary Response:", res.data);
+      console.log("Cloudinary Response:", res.data);
       const imageUrl = res.data.secure_url;
 
       if (!imageUrl) {
@@ -45,7 +57,7 @@ export default function UploadForm() {
       console.log(" Cloudinary Image URL:", imageUrl);
       console.log("Saving data to Firestore...");
 
-     await addPhoto({
+      await addPhoto({
         title,
         description: desc,
         imageUrl,
@@ -59,7 +71,6 @@ export default function UploadForm() {
 
       toast.success("Uploaded successfully!");
       navigate("/");
-
     } catch (err) {
       console.error("Upload failed:", err);
 
@@ -80,22 +91,37 @@ export default function UploadForm() {
     >
       <h2 className="text-xl font-semibold mb-4 text-center">Upload Photo</h2>
 
-      <label className="block mb-2 text-sm ">Select Image</label>
-      <input
-        className="p-1 bg-gray-100 rounded-md"
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          console.log("File chosen:", e.target.files[0]);
-          setFile(e.target.files[0]);
-        }}
-      />
+      <div className="flex items-center justify-center mt-5">
+        <label
+          htmlFor="fileInput"
+          className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-400"
+        >
+          {/* Show preview if image selected */}
+          {image ? (
+            <img
+              src={image}
+              alt="preview"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-gray-600 text-5xl font-extrabold mb-2">+</span>
+          )}
+        </label>
+
+        <input
+          id="fileInput"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageChange}
+        />
+      </div>
 
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Title"
-        className="border-gray-500 w-full mt-4 p-2 rounded"
+        className="border-gray-500 w-full mt-6 p-2 rounded"
         mixLength={10}
       />
 
